@@ -310,7 +310,7 @@ async function submitPost(e) {
         for (const m of selectedMedia) {
             try {
                 const result = await uploadToCloudinary(m.file, m.type);
-                const entry = { url: result.url, type: result.type };
+                const entry = { url: result.secure_url, type:m.type};
                 if (m.type === 'raw') {
                     entry.name = m.name;
                 }
