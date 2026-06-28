@@ -1,7 +1,5 @@
 // ===== CONFIG =====
-const CLOUDINARY_CLOUD_NAME = "dep8cskca";
-const CLOUDINARY_UPLOAD_PRESET = "ml_default";
-const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}`;
+
 
 const firebaseConfig = {
     apiKey: "AIzaSyA3aEESTrR72H8DEebvHvrwFKF_VYW3IC0",
@@ -204,13 +202,31 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
 
 // ===== MEDIA UPLOAD =====
 async function uploadToCloudinary(file, resourceType) {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-    const res = await fetch(`${CLOUDINARY_URL}/${resourceType}/upload`, { method: 'POST', body: formData });
-    if (!res.ok) throw new Error('Upload failed');
-    const data = await res.json();
-    return { url: data.secure_url, type: resourceType };
+
+    const sign = await fetch("/api/upload", {
+        method: "POST"
+    });
+
+    const s = await sign.json();
+
+    const form = new FormData();
+
+    form.append("file", file);
+    form.append("api_key", s.apiKey);
+    form.append("timestamp", s.timestamp);
+    form.append("signature", s.signature);
+
+    const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${s.cloudName}/${resourceType}/upload`,
+        {
+            method: "POST",
+            body: form
+        }
+    );
+
+    if (!res.ok) throw new Error("Upload failed");
+
+    return await res.json();
 }
 
 function handleMediaSelect(e, type) {
