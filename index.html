@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CVR — Idea Vanguard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+(function(){if(localStorage.getItem('theme')==='light'){document.documentElement.classList.add('light-theme')}})();
+</script>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+    <a href="#" class="nav-logo" onclick="navigate('explore');return false">CVR<span>Idea Vanguard</span></a>
+    <div class="nav-center" id="navTabs">
+        <button class="nav-tab active" data-page="explore">Explore</button>
+        <button class="nav-tab" data-page="create">Post Idea</button>
+        <button class="nav-tab" data-page="profile">Profile</button>
+    </div>
+    <div class="nav-right-wrap">
+        <div class="nav-right" id="navRight"></div>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+            <i data-lucide="sun" class="theme-icon-sun"></i>
+            <i data-lucide="moon" class="theme-icon-moon"></i>
+        </button>
+    </div>
+</nav>
+
+<!-- PAGES -->
+<div class="main">
+
+    <!-- AUTH -->
+    <div class="page active" id="page-auth">
+        <div class="auth-box">
+            <h1 id="authTitle">Join CVR Ideas</h1>
+            <p id="authSubtitle">Share your vision for the future of intelligent robotics. Sign in to post ideas, vote, and collaborate.</p>
+            <button class="auth-google" onclick="googleSignIn()">
+                <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                Continue with Google
+            </button>
+            <div class="auth-divider">or use email</div>
+            <form class="auth-form" id="authForm" onsubmit="handleAuth(event)">
+                <div id="nameField" style="display:none">
+                    <input class="auth-input" type="text" id="authName" placeholder="Full name" autocomplete="name">
+                </div>
+                <input class="auth-input" type="email" id="authEmail" placeholder="Email address" required autocomplete="email">
+                <input class="auth-input" type="password" id="authPass" placeholder="Password (min 6 characters)" required minlength="6" autocomplete="current-password">
+                <div class="auth-err" id="authErr"></div>
+                <button class="auth-btn" type="submit" id="authBtn">Create Account</button>
+            </form>
+            <div class="auth-switch" id="authSwitch">Already have an account? <a onclick="toggleAuthMode()">Sign in</a></div>
+        </div>
+    </div>
+
+    <!-- EXPLORE -->
+    <div class="page page-wide" id="page-explore">
+        <div class="explore-header">
+            <h2>Explore Ideas</h2>
+            <input class="explore-search" type="text" placeholder="Search ideas..." id="searchInput" oninput="filterPosts()">
+        </div>
+        <div class="posts-list" id="postsList">
+            <div class="loading-center"><div class="spinner"></div></div>
+        </div>
+    </div>
+
+    <!-- CREATE -->
+    <div class="page" id="page-create">
+        <div class="create-header">
+            <h2>Share an Idea</h2>
+            <p>Describe your concept for robotics, AI, or smart hardware innovation.</p>
+        </div>
+        <form class="create-form" id="createForm" onsubmit="submitPost(event)">
+            <input class="create-title" type="text" id="postTitle" placeholder="Idea title" required maxlength="200">
+            <textarea class="create-body" id="postBody" placeholder="Describe your idea in detail... What problem does it solve? How would it work? What technologies are needed?" required></textarea>
+            <div class="create-media">
+                <label><i data-lucide="image" style="width:16px;height:16px"></i> Add Image <input type="file" accept="image/*" onchange="handleMediaSelect(event,'image')"></label>
+                <label><i data-lucide="video" style="width:16px;height:16px"></i> Add Video <input type="file" accept="video/*" onchange="handleMediaSelect(event,'video')"></label>
+                <label><i data-lucide="file-text" style="width:16px;height:16px"></i> Add PDF <input type="file" accept="application/pdf" onchange="handleMediaSelect(event,'raw')"></label>
+            </div>
+            <div class="media-preview" id="mediaPreview"></div>
+            <div class="create-actions">
+                <button type="button" class="btn-cancel" onclick="navigate('explore')">Cancel</button>
+                <button type="submit" class="btn-submit" id="submitBtn" disabled>Publish <i data-lucide="send" style="width:14px;height:14px"></i></button>
+            </div>
+        </form>
+    </div>
+
+    <!-- POST DETAIL -->
+    <div class="page" id="page-detail">
+        <button class="back-btn" onclick="navigate('explore')"><i data-lucide="arrow-left" style="width:14px;height:14px"></i> Back</button>
+        <div id="detailContent"></div>
+        <div class="comments-section" id="commentsSection">
+            <h3>Comments</h3>
+            <div class="comment-input-row">
+                <textarea class="comment-input" id="commentInput" placeholder="Write a comment..." rows="1"></textarea>
+                <button class="comment-send" onclick="addComment()"><i data-lucide="send" style="width:16px;height:16px"></i></button>
+            </div>
+            <div class="comment-list" id="commentList"></div>
+        </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="page" id="page-profile">
+        <div class="profile-header" id="profileHeader"></div>
+        <div class="profile-section">
+            <h3>Your Ideas</h3>
+            <div class="my-posts-list" id="myPostsList">
+                <div class="loading-center"><div class="spinner"></div></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('open')">
+    <img id="lightboxImg" src="" alt="">
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
